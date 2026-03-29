@@ -1,0 +1,58 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Decision App — Stop Overthinking. Make smarter decisions in under 60 seconds.">
+    <title>{% block title %}Decision App — Stop Overthinking{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+
+    <nav class="navbar" id="main-nav">
+        <a href="/" class="navbar-brand">⚡ DecisionApp</a>
+        <div class="navbar-nav">
+            {% if user.is_authenticated %}
+            <a href="{% url 'home' %}" class="nav-link">🏠 Home</a>
+            <a href="{% url 'dashboard' %}" class="nav-link">📊 Dashboard</a>
+            <a href="{% url 'history' %}" class="nav-link">🗂 History</a>
+            <!-- POST logout for CSRF protection -->
+            <form method="post" action="{% url 'logout' %}" style="display:inline;">
+                {% csrf_token %}
+                <button type="submit" class="nav-link danger" style="background:none; border:none; cursor:pointer; font-family:inherit; font-size:inherit; padding:0;">🚪 Logout</button>
+            </form>
+            {% else %}
+            <a href="{% url 'login' %}" class="nav-link">Login</a>
+            <a href="{% url 'register' %}" class="nav-link">Register</a>
+            {% endif %}
+        </div>
+    </nav>
+
+    {% if messages %}
+    <div class="container" style="padding-top:0.5rem; padding-bottom:0;">
+        {% for message in messages %}
+        <div style="padding:0.75rem 1.25rem; border-radius:10px; margin-bottom:0.5rem; font-size:0.95rem; animation:fadeIn 0.4s ease;
+            {% if message.tags == 'error' %}background:rgba(255,75,75,0.15);border:1px solid var(--danger);color:var(--danger);
+            {% elif message.tags == 'success' %}background:rgba(34,197,94,0.15);border:1px solid var(--success);color:var(--success);
+            {% else %}background:rgba(0,242,254,0.1);border:1px solid var(--primary);color:var(--primary);{% endif %}">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <main class="container">
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer style="text-align:center; color:var(--text-muted); padding:2rem 0 1.5rem; font-size:0.85rem; border-top:1px solid var(--border-color); margin-top:auto;">
+        Built with ⚡ Django &nbsp;|&nbsp; Stop Overthinking &nbsp;|&nbsp; Make Better Decisions
+    </footer>
+
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>

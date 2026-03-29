@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+{% block title %}History — Decision App{% endblock %}
+
+{% block content %}
+<div style="animation:slideUp 0.5s ease;">
+    <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:1rem; margin-bottom:0.5rem;">
+        <h1 style="font-size:2rem; font-weight:700; background:linear-gradient(135deg,var(--text-main),var(--primary)); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;">
+            🗂 Decision History
+        </h1>
+        <a href="{% url 'export_csv' %}" class="btn" style="background:rgba(34,197,94,0.15); border:1px solid rgba(34,197,94,0.4); color:var(--success); padding:0.5rem 1.25rem; font-size:0.9rem; text-decoration:none; border-radius:8px;">
+            ⬇️ Export CSV
+        </a>
+    </div>
+    <p style="color:var(--text-muted); margin-bottom:1.5rem;">Review and manage all your past decisions.</p>
+
+    <!-- Search -->
+    <form method="get" style="margin-bottom:1.25rem; display:flex; gap:0.5rem;">
+        {% if filter != 'all' %}<input type="hidden" name="filter" value="{{ filter }}">{% endif %}
+        {% if priority %}<input type="hidden" name="priority" value="{{ priority }}">{% endif %}
+        <input class="form-control" name="search" value="{{ search }}" placeholder="Search tasks..." style="flex:1; max-width:360px;">
+        <button class="btn btn-primary" style="padding:0.5rem 1rem;">🔍</button>
+        {% if search %}<a href="{% url 'history' %}" class="btn" style="background:var(--surface-color); border:1px solid var(--border-color); color:var(--text-muted); padding:0.5rem 1rem;">✕ Clear</a>{% endif %}
+    </form>
+
+    <!-- Filters -->
+    <div style="display:flex; gap:0.75rem; margin-bottom:2rem; flex-wrap:wrap;">
+        <a href="{% url 'history' %}{% if search %}?search={{ search }}{% endif %}" class="btn {% if filter == 'all' %}btn-primary{% endif %}" style="{% if filter != 'all' %}background:var(--surface-color); border:1px solid var(--border-color); color:var(--text-main);{% endif %} padding:0.5rem 1.25rem; font-size:0.9rem;">All</a>
+        <a href="{% url 'history' %}?filter=do-it{% if search %}&search={{ search }}{% endif %}" class="btn {% if filter == 'do-it' %}btn-primary{% endif %}" style="{% if filter != 'do-it' %}background:rgba(34,197,94,0.1); border:1px solid rgba(34,197,94,0.3); color:var(--success);{% endif %} padding:0.5rem 1.25rem; font-size:0.9rem;">🚀 Do It</a>
+        <a href="{% url 'history' %}?filter=delay{% if search %}&search={{ search }}{% endif %}" class="btn {% if filter == 'delay' %}btn-primary{% endif %}" style="{% if filter != 'delay' %}background:rgba(250,204,21,0.1); border:1px solid rgba(250,204,21,0.3); color:var(--warning);{% endif %} padding:0.5rem 1.25rem; font-size:0.9rem;">⏰ Delay</a>
+        <a href="{% url 'history' %}?filter=skip{% if search %}&search={{ search }}{% endif %}" class="btn {% if filter == 'skip' %}btn-primary{% endif %}" style="{% if filter != 'skip' %}background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); color:var(--danger);{% endif %} padding:0.5rem 1.25rem; font-size:0.9rem;">⛔ Skip</a>
+        <span style="border-left:1px solid var(--border-color); margin:0 0.25rem;"></span>
+        {% for slug, label in priority_options %}
+        <a href="{% url 'history' %}?priority={{ slug }}{% if search %}&search={{ search }}{% endif %}" class="btn" style="background:rgba(0,242,254,0.05); border:1px solid {% if priority == slug %}var(--primary){% else %}var(--border-color){% endif %}; color:{% if priority == slug %}var(--primary){% else %}var(--text-muted){% endif %}; padding:0.5rem 1rem; font-size:0.85rem;">{{ label }}</a>
+        {% endfor %}
+    </div>
+
+    <!-- Decision List -->
+    <div class="glass-panel" style="padding:0.5rem 0;">
+        {% for d in decisions %}
+        <div class="history-item" style="padding:1.25rem 1.5rem; align-items:flex-start;">
+            <div style="flex:1;">
+                <div style="display:flex; align-items:center; gap:0.75rem; margin-bottom:0.25rem; flex-wrap:wrap;">
+                    <span class="task-name">{{ d.task }}</span>
+                    {% if d.is_quick %}<span style="font-size:0.7rem; background:rgba(0,242,254,0.15); color:var(--primary); padding:0.15rem 0.5rem; border-radius:20px;">⚡ Quick</span>{% endif %}
+                    {% if d.bookmarked %}<span style="font-size:0.85rem;">📌</span>{% endif %}
+                </div>
+                <div style="display:flex; gap:1rem; font-size:0.8rem; color:var(--text-muted); flex-wrap:wrap;">
+                    <span>{{ d.created_at|date:"M d, Y h:i A" }}</span>
+                    {% if d.priority != 'other' %}<span>🏷 {{ d.priority|title }}</span>{% endif %}
+                    <span>⚡ {{ d.energy|title }}</span>
+                </div>
+                {% if d.notes %}<div style="margin-top:0.5rem; font-size:0.85rem; color:var(--text-muted); font-style:italic;">"{{ d.notes }}"</div>{% endif %}
+            </div>
+            <div style="display:flex; align-items:center; gap:0.75rem; flex-shrink:0;">
+                <span class="task-result {% if d.result == 'DO IT' or d.result == 'DO SMALL VERSION' %}badge-do{% elif d.result == 'DELAY' %}badge-delay{% else %}badge-skip{% endif %}">{{ d.result }}</span>
+                <a href="{% url 'toggle_bookmark' d.pk %}" style="text-decoration:none; font-size:1.1rem; opacity:0.5; transition:opacity 0.3s;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.5'">
+                    {% if d.bookmarked %}📌{% else %}📎{% endif %}
+                </a>
+                <form method="post" action="{% url 'delete_decision' d.pk %}" style="display:inline;" onsubmit="return confirm('Delete this decision?');">
+                    {% csrf_token %}
+                    <button type="submit" style="background:none; border:none; cursor:pointer; color:var(--danger); font-size:0.85rem; opacity:0.5; transition:opacity 0.3s;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.5'" title="Delete">🗑</button>
+                </form>
+            </div>
+        </div>
+        {% empty %}
+        <div style="text-align:center; padding:3rem; color:var(--text-muted);">
+            <span style="font-size:3rem;">🤔</span>
+            <p style="margin-top:1rem;">{% if search %}No decisions found for "{{ search }}".{% else %}No decisions found. Start making some!{% endif %}</p>
+            <a href="{% url 'home' %}" class="btn btn-primary" style="margin-top:1rem;">Go to Home</a>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

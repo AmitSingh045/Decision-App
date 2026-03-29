@@ -1,0 +1,178 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard — Decision App{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<div style="animation:slideUp 0.5s ease;">
+    <h1 style="font-size:2rem; font-weight:700; margin-bottom:0.5rem; background:linear-gradient(135deg,var(--text-main),var(--primary)); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;">
+        📊 Your Dashboard
+    </h1>
+    <p style="color:var(--text-muted); margin-bottom:2rem;">Track your progress and discover your patterns.</p>
+
+    <!-- Stats Grid -->
+    <div class="dashboard-grid">
+        <div class="stat-card" style="border-left:3px solid var(--success);">
+            <span class="stat-title">Do It</span>
+            <span class="stat-value stat-do">{{ do_it }}</span>
+        </div>
+        <div class="stat-card" style="border-left:3px solid var(--warning);">
+            <span class="stat-title">Delay</span>
+            <span class="stat-value stat-delay">{{ delay }}</span>
+        </div>
+        <div class="stat-card" style="border-left:3px solid var(--danger);">
+            <span class="stat-title">Skip</span>
+            <span class="stat-value stat-skip">{{ skip }}</span>
+        </div>
+        <div class="stat-card" style="border-left:3px solid var(--primary);">
+            <span class="stat-title">🔥 Streak</span>
+            <span class="stat-value stat-streak">{% if streak %}{{ streak.count }}{% else %}0{% endif %}</span>
+        </div>
+    </div>
+
+    <!-- Second Row Stats -->
+    <div class="dashboard-grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom:2rem;">
+        <div class="stat-card" style="text-align:center;">
+            <span class="stat-title">Total Decisions</span>
+            <span class="stat-value" style="color:var(--text-main);">{{ total }}</span>
+        </div>
+        <div class="stat-card" style="text-align:center;">
+            <span class="stat-title">Today</span>
+            <span class="stat-value" style="color:var(--secondary);">{{ today_count }}</span>
+        </div>
+        <div class="stat-card" style="text-align:center;">
+            <span class="stat-title">Productivity</span>
+            <span class="stat-value" style="color:{% if productivity >= 60 %}var(--success){% elif productivity >= 30 %}var(--warning){% else %}var(--danger){% endif %};">{{ productivity }}%</span>
+        </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div style="display:grid; grid-template-columns:2fr 1fr; gap:1.5rem; margin-bottom:2rem;">
+        <!-- Weekly Activity Chart -->
+        <div class="glass-panel">
+            <h3 style="font-weight:700; margin-bottom:1rem;">📈 Weekly Activity</h3>
+            <canvas id="weeklyChart" height="200"></canvas>
+        </div>
+
+        <!-- Priority Breakdown -->
+        <div class="glass-panel">
+            <h3 style="font-weight:700; margin-bottom:1rem;">🏷 By Priority</h3>
+            <canvas id="priorityChart" height="200"></canvas>
+        </div>
+    </div>
+
+    <!-- Decision Patterns -->
+    {% if patterns %}
+    <div class="glass-panel" style="margin-bottom:2rem;">
+        <h3 style="font-weight:700; margin-bottom:1rem;">🔁 Your Patterns</h3>
+        {% for p in patterns %}
+        <div style="padding:0.75rem 0; border-bottom:1px solid var(--border-color); font-size:1rem;">{{ p }}</div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Smart Suggestions -->
+    {% if suggestions %}
+    <div class="glass-panel suggestion-panel" style="margin-bottom:2rem; animation:slideUp 0.5s ease 0.3s both;">
+        <h3 style="font-weight:700; margin-bottom:1rem; display:flex; align-items:center; gap:0.5rem;">
+            <span style="font-size:1.3rem;">🧠</span> Smart Insights
+            <span style="font-size:0.75rem; font-weight:400; color:var(--text-muted); margin-left:auto;">Based on your last 7 days</span>
+        </h3>
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:0.75rem;">
+            {% for s in suggestions %}
+            <div class="suggestion-card suggestion-{{ s.severity }}" style="animation:fadeIn 0.5s ease {{ forloop.counter }}00ms both;">
+                <div style="display:flex; gap:0.75rem; align-items:flex-start;">
+                    <span style="font-size:1.5rem; line-height:1; flex-shrink:0;">{{ s.icon }}</span>
+                    <div style="flex:1; min-width:0;">
+                        <div class="suggestion-card-title">{{ s.title }}</div>
+                        <div class="suggestion-card-message">{{ s.message }}</div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Best Streak -->
+    {% if streak %}
+    <div class="glass-panel" style="text-align:center;">
+        <span style="font-size:3rem;">🏆</span>
+        <h3 style="font-weight:700; margin:0.5rem 0;">Best Streak: {{ streak.best_streak }} days</h3>
+        <p style="color:var(--text-muted);">Keep going to beat your record!</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    // Weekly Activity Chart
+    const weekCtx = document.getElementById('weeklyChart').getContext('2d');
+    new Chart(weekCtx, {
+        type: 'bar',
+        data: {
+            labels: {{ chart_labels|safe }},
+            datasets: [
+                {
+                    label: 'Do It',
+                    data: {{ chart_do|safe }},
+                    backgroundColor: 'rgba(34, 197, 94, 0.7)',
+                    borderRadius: 6,
+                },
+                {
+                    label: 'Delay',
+                    data: {{ chart_delay|safe }},
+                    backgroundColor: 'rgba(250, 204, 21, 0.7)',
+                    borderRadius: 6,
+                },
+                {
+                    label: 'Skip',
+                    data: {{ chart_skip|safe }},
+                    backgroundColor: 'rgba(239, 68, 68, 0.7)',
+                    borderRadius: 6,
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { labels: { color: '#94a3b8' } } },
+            scales: {
+                x: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.05)' } },
+                y: { ticks: { color: '#94a3b8', stepSize: 1 }, grid: { color: 'rgba(255,255,255,0.05)' }, beginAtZero: true }
+            }
+        }
+    });
+
+    // Priority Doughnut Chart
+    const priLabels = {{ priority_labels|safe }};
+    const priCounts = {{ priority_counts|safe }};
+    if (priLabels.length > 0) {
+        const priCtx = document.getElementById('priorityChart').getContext('2d');
+        new Chart(priCtx, {
+            type: 'doughnut',
+            data: {
+                labels: priLabels,
+                datasets: [{
+                    data: priCounts,
+                    backgroundColor: [
+                        'rgba(0, 242, 254, 0.8)',
+                        'rgba(34, 197, 94, 0.8)',
+                        'rgba(250, 204, 21, 0.8)',
+                        'rgba(239, 68, 68, 0.8)',
+                        'rgba(79, 172, 254, 0.8)',
+                    ],
+                    borderWidth: 0,
+                }]
+            },
+            options: {
+                responsive: true,
+                cutout: '65%',
+                plugins: { legend: { position: 'bottom', labels: { color: '#94a3b8', padding: 12 } } }
+            }
+        });
+    }
+</script>
+{% endblock %}

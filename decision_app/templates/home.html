@@ -1,0 +1,427 @@
+{% extends 'base.html' %}
+{% block title %}Home — Decision App{% endblock %}
+
+{% block content %}
+<div class="home-layout">
+
+    <!-- LEFT: Decision Panel -->
+    <div>
+        <!-- Streak Banner -->
+        {% if streak and streak.count > 0 %}
+        <div class="glass-panel"
+            style="margin-bottom:1.5rem; display:flex; align-items:center; gap:1rem; padding:1rem 1.5rem;">
+            <span style="font-size:2rem;">🔥</span>
+            <div>
+                <div style="font-weight:700; font-size:1.2rem; color:var(--primary);">{{ streak.count }}-day streak!
+                </div>
+                <div style="color:var(--text-muted); font-size:0.85rem;">Best: {{ streak.best_streak }} days</div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Standard Decision Form -->
+        <div class="glass-panel" style="animation:slideUp 0.5s ease;">
+            <h2
+                style="font-size:1.5rem; font-weight:700; margin-bottom:1.5rem; background:linear-gradient(135deg,var(--text-main),var(--primary)); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;">
+                🧠 Make a Decision
+            </h2>
+
+            <form method="post" id="decision-form">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="decide">
+
+                <div class="form-group">
+                    <label class="form-label" for="task-input">What's the task?</label>
+                    <input class="form-control" type="text" id="task-input" name="task"
+                        placeholder="e.g. Study for exam, Go for a run..." required>
+                </div>
+
+                <div class="two-col-grid">
+                    <div class="form-group">
+                        <label class="form-label" for="energy-select">⚡ Energy Level</label>
+                        <select class="form-control" id="energy-select" name="energy">
+                            <option value="high">🟢 High</option>
+                            <option value="medium" selected>🟡 Medium</option>
+                            <option value="low">🔴 Low</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="priority-select">🏷 Priority</label>
+                        <select class="form-control" id="priority-select" name="priority">
+                            <option value="study">📚 Study</option>
+                            <option value="health">🏃 Health</option>
+                            <option value="work">💼 Work</option>
+                            <option value="fun">🎮 Fun</option>
+                            <option value="other" selected>📌 Other</option>
+                        </select>
+                    </div>
+                </div>
+
+                <label class="form-label" style="margin-bottom:1rem; font-size:1.05rem; color:var(--primary);">✨ Take a
+                    mindful pause. Ask yourself:</label>
+                <div style="display:flex; flex-direction:column; gap:0.5rem; margin-bottom:1rem;">
+                    <div class="question-row">
+                        <span style="font-size:0.95rem;">Does this directly impact my biggest goals?</span>
+                        <div class="question-row-options">
+                            <label
+                                style="cursor:pointer; display:flex; align-items:center; gap:0.25rem; font-size:0.9rem;"><input
+                                    type="radio" name="q1" value="on" required> Yes</label>
+                            <label
+                                style="cursor:pointer; display:flex; align-items:center; gap:0.25rem; font-size:0.9rem;"><input
+                                    type="radio" name="q1" value="off"> No</label>
+                        </div>
+                    </div>
+                    <div class="question-row">
+                        <span style="font-size:0.95rem;">Will finishing this reduce my stress or anxiety?</span>
+                        <div class="question-row-options">
+                            <label
+                                style="cursor:pointer; display:flex; align-items:center; gap:0.25rem; font-size:0.9rem;"><input
+                                    type="radio" name="q2" value="on" required> Yes</label>
+                            <label
+                                style="cursor:pointer; display:flex; align-items:center; gap:0.25rem; font-size:0.9rem;"><input
+                                    type="radio" name="q2" value="off"> No</label>
+                        </div>
+                    </div>
+                    <div class="question-row">
+                        <span style="font-size:0.95rem;">Is this the absolute best use of my time right now?</span>
+                        <div class="question-row-options">
+                            <label
+                                style="cursor:pointer; display:flex; align-items:center; gap:0.25rem; font-size:0.9rem;"><input
+                                    type="radio" name="q3" value="on" required> Yes</label>
+                            <label
+                                style="cursor:pointer; display:flex; align-items:center; gap:0.25rem; font-size:0.9rem;"><input
+                                    type="radio" name="q3" value="off"> No</label>
+                        </div>
+                    </div>
+                    <div class="question-row">
+                        <span style="font-size:0.95rem;">Do I have everything I need to start this immediately?</span>
+                        <div class="question-row-options">
+                            <label
+                                style="cursor:pointer; display:flex; align-items:center; gap:0.25rem; font-size:0.9rem;"><input
+                                    type="radio" name="q4" value="on" required> Yes</label>
+                            <label
+                                style="cursor:pointer; display:flex; align-items:center; gap:0.25rem; font-size:0.9rem;"><input
+                                    type="radio" name="q4" value="off"> No</label>
+                        </div>
+                    </div>
+                    <div class="question-row">
+                        <span style="font-size:0.95rem;">Will my future self thank me for doing this today?</span>
+                        <div class="question-row-options">
+                            <label
+                                style="cursor:pointer; display:flex; align-items:center; gap:0.25rem; font-size:0.9rem;"><input
+                                    type="radio" name="q5" value="on" required> Yes</label>
+                            <label
+                                style="cursor:pointer; display:flex; align-items:center; gap:0.25rem; font-size:0.9rem;"><input
+                                    type="radio" name="q5" value="off"> No</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-top:1rem;">
+                    <label class="form-label" for="notes-input">📝 Notes (optional)</label>
+                    <input class="form-control" type="text" id="notes-input" name="notes" placeholder="Any thoughts...">
+                </div>
+
+                <button type="submit" class="btn btn-primary w-full" style="margin-top:0.5rem;">🎯 Get My
+                    Decision</button>
+            </form>
+
+            <!-- Quick Decision -->
+            <div style="margin-top:1.5rem; padding-top:1.5rem; border-top:1px solid var(--border-color);">
+                <form method="post" class="quick-decision-form">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="quick_decide">
+                    <div style="flex:1;">
+                        <label class="form-label">⚡ Quick Decision</label>
+                        <input class="form-control" name="task" placeholder="Task name..." required>
+                    </div>
+                    <select class="form-control" name="energy" style="width:auto;">
+                        <option value="high">High</option>
+                        <option value="medium" selected>Medium</option>
+                        <option value="low">Low</option>
+                    </select>
+                    <select class="form-control" name="priority" style="width:auto;">
+                        <option value="other">Other</option>
+                        <option value="study">Study</option>
+                        <option value="health">Health</option>
+                        <option value="work">Work</option>
+                        <option value="fun">Fun</option>
+                    </select>
+                    <button class="btn btn-primary" style="white-space:nowrap;">⚡ Go!</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Result Display -->
+        {% if result %}
+        <div class="result-card {% if result == 'DO IT' or result == 'DO SMALL VERSION' %}result-do-it{% elif result == 'DELAY' %}result-delay{% else %}result-skip{% endif %}"
+            style="animation:slideUp 0.5s ease 0.1s both;">
+            <div style="font-size:2.5rem; margin-bottom:0.5rem;">
+                {% if result == 'DO IT' %}🚀{% elif result == 'DO SMALL VERSION' %}🎯{% elif result == 'DELAY' %}⏰{% else %}⛔{% endif %}
+            </div>
+            {{ result }}
+        </div>
+        {% endif %}
+
+        {% if reminder %}
+        <div
+            style="text-align:center; margin-top:1rem; color:var(--text-muted); font-size:1rem; animation:fadeIn 0.8s ease;">
+            {{ reminder }}
+        </div>
+        {% endif %}
+
+        <!-- Recent History -->
+        {% if decisions %}
+        <div class="glass-panel" style="margin-top:2rem; animation:slideUp 0.6s ease 0.2s both;">
+            <h3 style="font-weight:700; margin-bottom:1rem; font-size:1.1rem;">🕐 Recent Decisions</h3>
+            {% for d in decisions %}
+            <div class="history-item">
+                <div>
+                    <span class="task-name">{{ d.task }}</span>
+                    {% if d.priority != 'other' %}
+                    <span
+                        style="font-size:0.75rem; color:var(--text-muted); margin-left:0.5rem;">{{ d.priority|title }}</span>
+                    {% endif %}
+                </div>
+                <span
+                    class="task-result {% if d.result == 'DO IT' or d.result == 'DO SMALL VERSION' %}badge-do{% elif d.result == 'DELAY' %}badge-delay{% else %}badge-skip{% endif %}">{{ d.result }}</span>
+            </div>
+            {% endfor %}
+            <a href="{% url 'history' %}"
+                style="display:block; text-align:center; margin-top:1rem; color:var(--primary); text-decoration:none; font-weight:600; font-size:0.9rem;">View
+                All History →</a>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- RIGHT: Sidebar -->
+    <div>
+        <!-- 🧠 Smart Suggestions Panel -->
+        {% if suggestions %}
+        <div class="glass-panel suggestion-panel" style="margin-bottom:1.5rem; animation:slideUp 0.4s ease 0.05s both;">
+            <h3
+                style="font-weight:700; margin-bottom:1rem; font-size:1.1rem; display:flex; align-items:center; gap:0.5rem;">
+                <span style="font-size:1.3rem;">🧠</span> Smart Insights
+                <span
+                    style="font-size:0.7rem; font-weight:400; color:var(--text-muted); margin-left:auto;">{{ suggestions|length }}
+                    insight{{ suggestions|length|pluralize }}</span>
+            </h3>
+            {% for s in suggestions %}
+            <div class="suggestion-card suggestion-{{ s.severity }}"
+                style="animation:fadeIn {{ forloop.counter|floatformat:0 }}00ms ease {{ forloop.counter }}00ms both;">
+                <div style="display:flex; gap:0.75rem; align-items:flex-start;">
+                    <span style="font-size:1.5rem; line-height:1; flex-shrink:0;">{{ s.icon }}</span>
+                    <div style="flex:1; min-width:0;">
+                        <div class="suggestion-card-title">{{ s.title }}</div>
+                        <div class="suggestion-card-message">{{ s.message }}</div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Daily Goals -->
+        <div class="glass-panel" style="margin-bottom:1.5rem; animation:slideUp 0.5s ease 0.15s both;">
+            <h3 style="font-weight:700; margin-bottom:1rem; font-size:1.1rem;">🎯 Today's Goals</h3>
+
+            {% for goal in goals %}
+            <div
+                style="display:flex; align-items:center; gap:0.75rem; padding:0.5rem 0; border-bottom:1px solid var(--border-color);">
+                <form method="post" style="display:inline;">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="toggle_goal">
+                    <input type="hidden" name="goal_id" value="{{ goal.id }}">
+                    <button style="background:none; border:none; cursor:pointer; font-size:1.2rem;">
+                        {% if goal.completed %}✅{% else %}⬜{% endif %}
+                    </button>
+                </form>
+                <span
+                    style="flex:1; {% if goal.completed %}text-decoration:line-through; color:var(--text-muted);{% endif %}">{{ goal.text }}</span>
+                <form method="post" style="display:inline;">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="delete_goal">
+                    <input type="hidden" name="goal_id" value="{{ goal.id }}">
+                    <button
+                        style="background:none; border:none; cursor:pointer; color:var(--danger); font-size:0.85rem;">✕</button>
+                </form>
+            </div>
+            {% empty %}
+            <p style="color:var(--text-muted); font-size:0.9rem;">No goals set for today. Add up to 3!</p>
+            {% endfor %}
+
+            {% if goals|length < 3 %}
+            <form method="post" style="display:flex; gap:0.5rem; margin-top:1rem;">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="add_goal">
+                <input class="form-control" name="goal_text" placeholder="Add a goal..." required style="flex:1;">
+                <button class="btn btn-primary" style="padding:0.5rem 1rem;">+</button>
+            </form>
+            {% endif %}
+        </div>
+
+        <!-- Quick Stats -->
+        <div class="glass-panel" style="animation:slideUp 0.5s ease 0.3s both;">
+            <h3 style="font-weight:700; margin-bottom:1rem; font-size:1.1rem;">📊 Quick Stats</h3>
+            <a href="{% url 'dashboard' %}"
+                style="display:block; text-align:center; color:var(--primary); text-decoration:none; font-weight:600; padding:1rem; border-radius:10px; background:rgba(0,242,254,0.05); border:1px solid rgba(0,242,254,0.2); transition:all 0.3s;">
+                View Full Dashboard →
+            </a>
+        </div>
+    </div>
+
+</div>
+
+<!-- ⚖️ Task Prioritizer — Full Width Section -->
+<div class="glass-panel" style="margin-top:2rem; animation:slideUp 0.6s ease 0.1s both;">
+    <h2 style="font-size:1.3rem; font-weight:700; margin-bottom:1.25rem; display:flex; align-items:center; gap:0.5rem;">
+        <span style="font-size:1.5rem;">⚖️</span>
+        <span
+            style="background:linear-gradient(135deg, #facc15, #f97316); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;">Task
+            Prioritizer</span>
+    </h2>
+    <p style="color:var(--text-muted); font-size:0.85rem; margin-bottom:1.25rem;">Can't decide what to do first? Compare
+        two tasks and let the algorithm tell you.</p>
+
+    <form method="post" id="compare-form">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="compare_tasks">
+
+        <div class="compare-grid">
+            <!-- Task A -->
+            <div class="compare-task-card compare-task-a">
+                <div class="compare-task-label">🅰️ Task One</div>
+                <input class="form-control" name="task_a" placeholder="e.g. Study for exam" required
+                    style="margin-bottom:0.75rem;">
+
+                <label class="form-label">🔥 Urgency</label>
+                <div class="slider-row">
+                    <span style="font-size:0.75rem; color:var(--text-muted);">Low</span>
+                    <input type="range" name="urgency_a" min="1" max="5" value="3" class="styled-range range-urgency">
+                    <span style="font-size:0.75rem; color:var(--text-muted);">High</span>
+                </div>
+
+                <label class="form-label">💎 Impact</label>
+                <div class="slider-row">
+                    <span style="font-size:0.75rem; color:var(--text-muted);">Low</span>
+                    <input type="range" name="impact_a" min="1" max="5" value="3" class="styled-range range-impact">
+                    <span style="font-size:0.75rem; color:var(--text-muted);">High</span>
+                </div>
+
+                <label class="form-label">💪 Effort Needed</label>
+                <div class="slider-row">
+                    <span style="font-size:0.75rem; color:var(--text-muted);">Easy</span>
+                    <input type="range" name="effort_a" min="1" max="5" value="3" class="styled-range range-effort">
+                    <span style="font-size:0.75rem; color:var(--text-muted);">Hard</span>
+                </div>
+
+                <div class="question-row" style="margin-top:0.75rem;">
+                    <span style="font-size:0.9rem;">📅 Has a deadline?</span>
+                    <div class="question-row-options">
+                        <label
+                            style="cursor:pointer; display:flex; align-items:center; gap:0.25rem; font-size:0.85rem;"><input
+                                type="radio" name="deadline_a" value="yes"> Yes</label>
+                        <label
+                            style="cursor:pointer; display:flex; align-items:center; gap:0.25rem; font-size:0.85rem;"><input
+                                type="radio" name="deadline_a" value="no" checked> No</label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VS Divider -->
+            <div class="compare-vs">VS</div>
+
+            <!-- Task B -->
+            <div class="compare-task-card compare-task-b">
+                <div class="compare-task-label">🅱️ Task Two</div>
+                <input class="form-control" name="task_b" placeholder="e.g. Go to the gym" required
+                    style="margin-bottom:0.75rem;">
+
+                <label class="form-label">🔥 Urgency</label>
+                <div class="slider-row">
+                    <span style="font-size:0.75rem; color:var(--text-muted);">Low</span>
+                    <input type="range" name="urgency_b" min="1" max="5" value="3" class="styled-range range-urgency">
+                    <span style="font-size:0.75rem; color:var(--text-muted);">High</span>
+                </div>
+
+                <label class="form-label">💎 Impact</label>
+                <div class="slider-row">
+                    <span style="font-size:0.75rem; color:var(--text-muted);">Low</span>
+                    <input type="range" name="impact_b" min="1" max="5" value="3" class="styled-range range-impact">
+                    <span style="font-size:0.75rem; color:var(--text-muted);">High</span>
+                </div>
+
+                <label class="form-label">💪 Effort Needed</label>
+                <div class="slider-row">
+                    <span style="font-size:0.75rem; color:var(--text-muted);">Easy</span>
+                    <input type="range" name="effort_b" min="1" max="5" value="3" class="styled-range range-effort">
+                    <span style="font-size:0.75rem; color:var(--text-muted);">Hard</span>
+                </div>
+
+                <div class="question-row" style="margin-top:0.75rem;">
+                    <span style="font-size:0.9rem;">📅 Has a deadline?</span>
+                    <div class="question-row-options">
+                        <label
+                            style="cursor:pointer; display:flex; align-items:center; gap:0.25rem; font-size:0.85rem;"><input
+                                type="radio" name="deadline_b" value="yes"> Yes</label>
+                        <label
+                            style="cursor:pointer; display:flex; align-items:center; gap:0.25rem; font-size:0.85rem;"><input
+                                type="radio" name="deadline_b" value="no" checked> No</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary w-full"
+            style="margin-top:1.25rem; background:linear-gradient(135deg, #facc15, #f97316); color:#000;">
+            ⚖️ Compare & Prioritize
+        </button>
+    </form>
+
+    <!-- Compare Result -->
+    {% if compare_result %}
+    <div style="margin-top:1.5rem; animation:slideUp 0.5s ease;">
+        {% if compare_result.is_tie %}
+        <div class="compare-result-card compare-result-tie">
+            <div style="font-size:2rem; margin-bottom:0.5rem;">🤝</div>
+            <div style="font-size:1.2rem; font-weight:700;">It's a Tie!</div>
+            <p style="color:var(--text-muted); font-size:0.9rem; margin-top:0.5rem;">Both tasks scored equally
+                ({{ compare_result.score_a }}). Pick whichever feels right — trust your instinct!</p>
+        </div>
+        {% else %}
+        <div class="compare-result-card compare-result-winner">
+            <div style="font-size:2rem; margin-bottom:0.5rem;">🏆</div>
+            <div style="font-size:1.1rem; font-weight:700; color:var(--success);">Do "{{ compare_result.winner }}"
+                first!</div>
+            <p style="color:var(--text-muted); font-size:0.85rem; margin-top:0.25rem;">Then tackle
+                "{{ compare_result.loser }}" afterwards</p>
+
+            <!-- Score Bars -->
+            <div style="margin-top:1rem;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.35rem;">
+                    <span style="font-size:0.85rem; font-weight:600;">{{ compare_result.task_a }}</span>
+                    <span
+                        style="font-size:0.8rem; color:var(--primary); font-weight:700;">{{ compare_result.score_a }}</span>
+                </div>
+                <div class="score-bar-track">
+                    <div class="score-bar-fill score-bar-a" style="width:{{ compare_result.score_a|floatformat:0 }}0%;">
+                    </div>
+                </div>
+
+                <div
+                    style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.35rem; margin-top:0.75rem;">
+                    <span style="font-size:0.85rem; font-weight:600;">{{ compare_result.task_b }}</span>
+                    <span
+                        style="font-size:0.8rem; color:var(--secondary); font-weight:700;">{{ compare_result.score_b }}</span>
+                </div>
+                <div class="score-bar-track">
+                    <div class="score-bar-fill score-bar-b" style="width:{{ compare_result.score_b|floatformat:0 }}0%;">
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
